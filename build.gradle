@@ -1,32 +1,38 @@
 apply plugin: 'groovy'
 apply plugin: 'maven'
+apply plugin: 'maven-publish'
 
 project.group = 'org.fenixedu'
 
 repositories {
     maven {
-        url "https://fenix-ashes.ist.utl.pt/nexus/content/groups/fenix-ashes-maven-repository"
+        url "https://repo.fenixedu.org/fenixedu-maven-repository"
     }
     mavenLocal()
 }
 
 dependencies {
-    compile "org.fenixedu:ff-gradle-plugin:1.0.0"
-    compile 'org.springframework.build.gradle:propdeps-plugin:0.0.6'
+    compile "org.fenixedu:ff-gradle-plugin:1.1.0-SNAPSHOT"
+    compile 'org.springframework.build.gradle:propdeps-plugin:0.0.7'
     compile 'nl.javadude.gradle.plugins:license-gradle-plugin:0.9.0'
 
     compile gradleApi()
     compile localGroovy()
 }
 
-if(project.hasProperty('repoUsername') && project.hasProperty('repoPassword')) {
-    uploadArchives {
-        repositories {
-            mavenDeployer {
-                repository(url: "https://fenix-ashes.ist.utl.pt/nexus/content/repositories/fenix-ashes-releases") {
-                    authentication(userName: "${repoUsername}", password: "${repoPassword}")
-                }
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            credentials {
+                username project.properties['repoUsername']
+                password project.properties['repoPassword']
             }
+            url "https://repo.fenixedu.org/fenixedu-releases"
         }
     }
 }

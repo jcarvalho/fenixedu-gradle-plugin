@@ -11,7 +11,7 @@ class FenixEduFFPlugin implements Plugin<Project> {
         project.apply(plugin: FenixEduWebPlugin)
         project.apply(plugin: FFGradlePlugin)
 
-        project.ext.ffVersion = "2.5.0"
+        project.ext.ffVersion = "2.5.1"
 
         project.afterEvaluate {
             project.dependencies {

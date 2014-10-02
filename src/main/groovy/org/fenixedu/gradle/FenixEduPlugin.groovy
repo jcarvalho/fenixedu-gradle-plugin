@@ -5,6 +5,8 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.plugins.MavenPlugin
+import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.publish.maven.plugins.MavenPublishPlugin
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.plugins.ide.eclipse.EclipsePlugin
 import org.gradle.plugins.ide.idea.IdeaPlugin
@@ -16,6 +18,7 @@ class FenixEduPlugin implements Plugin<Project> {
     void apply(Project project) {
 
         project.apply(plugin: MavenPlugin)
+        project.apply(plugin: MavenPublishPlugin)
         project.apply(plugin: EclipsePlugin)
         project.apply(plugin: IdeaPlugin)
         project.apply(plugin: JavaPlugin)
@@ -25,18 +28,38 @@ class FenixEduPlugin implements Plugin<Project> {
         project.repositories {
             mavenLocal()
             maven {
-                url "https://fenix-ashes.ist.utl.pt/nexus/content/groups/fenix-ashes-maven-repository"
+                url "https://repo.fenixedu.org/fenixedu-maven-repository"
             }
         }
 
-        if(project.hasProperty('repoUsername') && project.hasProperty('repoPassword')) {
-            project.uploadArchives {
-                repositories {
-                    mavenDeployer {
-                        repository(url: "https://fenix-ashes.ist.utl.pt/nexus/content/repositories/fenix-ashes-releases") {
-                            authentication(userName: "${project.repoUsername}", password: "${project.repoPassword}")
-                        }
+        project.publishing {
+            publications {
+                mavenJava(MavenPublication) {
+                    from project.components.java
+
+                    pom.withXml() {
+                        asNode().appendNode('description', project.description)
+                        asNode().appendNode('name', project.name)
+                        asNode().appendNode('organization')
+                                    .appendNode('name', 'FenixEdu').parent()
+                                    .appendNode('url', 'https://fenixedu.org')
                     }
+
+                    artifact project.sourcesJar {
+                        classifier "sources"
+                    }
+                    artifact project.javadocJar {
+                        classifier "javadoc"
+                    }
+                }
+            }
+            repositories {
+                maven {
+                    credentials {
+                        username project.properties['repoUsername']
+                        password project.properties['repoPassword']
+                    }
+                    url "https://repo.fenixedu.org/fenixedu-releases"
                 }
             }
         }
@@ -50,21 +73,6 @@ class FenixEduPlugin implements Plugin<Project> {
         project.group = 'org.fenixedu'
         project.sourceCompatibility = '1.8'
         project.description = project.name
-
-        project.install {
-            repositories.mavenInstaller {
-                pom.whenConfigured { generatedPom ->
-                    generatedPom.project {
-                        name = project.description
-                        description = project.description
-                        organization {
-                            name = "FenixEdu"
-                            url = "http://fenixedu.org"
-                        }
-                    }
-                }
-            }
-        }
 
         project.afterEvaluate {
             project.jar {
@@ -104,19 +112,6 @@ class FenixEduPlugin implements Plugin<Project> {
             classifier = "javadoc"
             from project.javadoc
         }
-
-        project.configurations {
-            sourceArchives
-        }
-
-        project.configurations.sourceArchives.extendsFrom(project.configurations.archives)
-
-        project.artifacts {
-            sourceArchives project.sourcesJar
-            sourceArchives project.javadocJar
-        }
-
-        project.uploadArchives.configuration = project.configurations.sourceArchives
 
     }
 
